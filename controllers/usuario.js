@@ -5,11 +5,22 @@ const { validationResult } = require("express-validator");
 const { generarJWT } = require("../helpers/jwt");
 
 const getUsuarios = async (req, res) => {
-  const usuarios = await Usuario.find({}, "nombre email role google");
+  const desde = Number(req.query.desde) || 0;
+
+  // const usuarios = await Usuario
+  //                       .find({}, "nombre email role google")
+  //                       .skip(desde)
+  //                       .limit(5);
+  // const total = await Usuario.count();
+  const [usuarios, total] = await Promise.all([
+    Usuario.find({}, "nombre img email role google").skip(desde).limit(5),
+    Usuario.count()
+  ]);
 
   res.json({
     ok: true,
     usuarios,
+    total,
   });
 };
 
@@ -34,12 +45,11 @@ const crearUsuario = async (req, res = response) => {
     await usuario.save();
 
     const token = await generarJWT(usuario.id);
-    
 
     res.json({
       ok: true,
       usuario,
-      token
+      token,
     });
   } catch (error) {
     console.log(error);
@@ -105,16 +115,16 @@ const borrarUsuario = async (req, res = response) => {
       });
     }
     const usuarios = await Usuario.findByIdAndDelete(uid);
-    
+
     res.json({
       ok: true,
-      msg: 'Usuario Eliminado',
+      msg: "Usuario Eliminado",
     });
   } catch (error) {
     console.log(error);
     res.status(500).json({
       ok: false,
-      msg: 'Error'
+      msg: "Error",
     });
   }
 };
